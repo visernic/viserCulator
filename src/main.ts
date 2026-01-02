@@ -27,18 +27,18 @@ class SoundManager {
         if (type === 'number') {
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(600, this.audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(300, this.audioCtx.currentTime + 0.05);
-            gainNode.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.05);
+            oscillator.frequency.exponentialRampToValueAtTime(300, this.audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.8, this.audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
             oscillator.start();
-            oscillator.stop(this.audioCtx.currentTime + 0.05);
+            oscillator.stop(this.audioCtx.currentTime + 0.1);
         } else {
             oscillator.type = 'triangle';
             oscillator.frequency.setValueAtTime(400, this.audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.08);
+            gainNode.gain.setValueAtTime(0.6, this.audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
             oscillator.start();
-            oscillator.stop(this.audioCtx.currentTime + 0.08);
+            oscillator.stop(this.audioCtx.currentTime + 0.1);
         }
     }
 }
@@ -78,22 +78,39 @@ class Calculator {
   }
 
   delete() {
-    if (this.currentOperand === '0' || this.shouldResetScreen) {
-      this.shouldResetScreen = false;
-      this.currentOperand = '0';
-      return;
+    if (this.shouldResetScreen) {
+        this.shouldResetScreen = false;
+        this.currentOperand = '0';
+        return;
     }
+    
+    // FIX: If current operand is empty but we have an operation, 
+    // allow deleting the operation to go back to previous number
+    if (this.currentOperand === '' && this.operation !== undefined) {
+        this.currentOperand = this.previousOperand;
+        this.previousOperand = '';
+        this.operation = undefined;
+        this.updateDisplay();
+        return;
+    }
+
+    if (this.currentOperand === '0') return;
+    
     this.currentOperand = this.currentOperand.toString().slice(0, -1);
     if (this.currentOperand === '') this.currentOperand = '0';
   }
 
   appendNumber(number: string) {
     this.soundManager.playClick('number');
+    
     if (this.shouldResetScreen) {
       this.currentOperand = '';
       this.shouldResetScreen = false;
     }
+    
     if (number === '.' && this.currentOperand.includes('.')) return;
+    
+    // Prevent multiple leading zeros
     if (this.currentOperand === '0' && number !== '.') {
       this.currentOperand = number;
     } else {
@@ -104,6 +121,7 @@ class Calculator {
   chooseOperation(operation: string) {
     this.soundManager.playClick('operator');
     
+    // Instant operations
     if (operation === 'sqrt') {
         const current = parseFloat(this.currentOperand);
         if (current < 0) { alert("Invalid Input"); return; }
@@ -123,18 +141,26 @@ class Calculator {
         return;
     }
 
-    if (this.currentOperand === '') return;
-    if (this.previousOperand !== '') {
-      this.compute(true);
+    // FIX: Allow changing operator if user hasn't started typing second number yet
+    if (this.currentOperand === '' && this.previousOperand !== '') {
+        this.operation = operation;
+        this.updateDisplay();
+        return;
     }
+
+    if (this.currentOperand === '') return;
+
+    if (this.previousOperand !== '') {
+        this.compute();
+    }
+    
     this.operation = operation;
     this.previousOperand = this.currentOperand;
-    this.currentOperand = '0';
+    this.currentOperand = '';
+    this.shouldResetScreen = false; 
   }
 
-  compute(isIntermediate: boolean = false) {
-    if (!isIntermediate) this.soundManager.playClick('operator');
-
+  compute() {
     let computation: number;
     const prev = parseFloat(this.previousOperand);
     const current = parseFloat(this.currentOperand);
@@ -153,31 +179,29 @@ class Calculator {
       default: return;
     }
 
-    if (!isIntermediate) {
-        const expression = `${this.formatNumber(this.previousOperand)} ${this.operation} ${this.formatNumber(this.currentOperand)}`;
-        saveHistory(expression, computation.toString());
-        
-        this.currentOperand = computation.toString();
-        this.operation = undefined;
-        this.previousOperand = '';
-        this.shouldResetScreen = true;
-        this.prevElPreview.innerText = '';
-    } else {
-        this.previousOperand = computation.toString();
-        this.currentOperand = '0';
-    }
+    this.currentOperand = computation.toString();
+    this.operation = undefined;
+    this.previousOperand = '';
+    this.shouldResetScreen = true;
+    this.prevElPreview.innerText = '';
   }
 
+  // FIX: Custom Formatter using Regex instead of toLocaleString
+  // This solves the issue of numbers turning into 00000 after 16 digits
   formatNumber(number: string): string {
+    if (!number) return '';
     const stringNumber = number.toString();
-    const integerDigits = parseFloat(stringNumber.split('.')[0]);
-    const decimalDigits = stringNumber.split('.')[1];
-    let integerDisplay;
-    if (isNaN(integerDigits)) integerDisplay = '';
-    else integerDisplay = integerDigits.toLocaleString('en', { maximumFractionDigits: 0 });
     
-    if (decimalDigits != null) return `${integerDisplay}.${decimalDigits}`;
-    return integerDisplay;
+    const parts = stringNumber.split('.');
+    const integerPart = parts[0];
+    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+    
+    // Add commas to integer part manually using Regex
+    // \B looks for a position that is not a word boundary
+    // (?=(\d{3})+(?!\d)) looks ahead for groups of 3 digits
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    return formattedInteger + decimalPart;
   }
 
   updateDisplay() {
@@ -186,11 +210,11 @@ class Calculator {
     if (this.operation != null) {
       this.prevEl.innerText = `${this.formatNumber(this.previousOperand)} ${this.operation}`;
       
-      if (this.currentOperand !== '0' && this.currentOperand !== '') {
+      if (this.currentOperand !== '' && !this.shouldResetScreen) {
          const prev = parseFloat(this.previousOperand);
          const current = parseFloat(this.currentOperand);
-         let tempRes = 0;
          if (!isNaN(prev) && !isNaN(current)) {
+             let tempRes = 0;
              switch (this.operation) {
                  case '+': tempRes = prev + current; break;
                  case '-': tempRes = prev - current; break;
@@ -198,6 +222,7 @@ class Calculator {
                  case '÷': tempRes = current!==0 ? prev/current : 0; break;
                  case '%': tempRes = (prev/100)*current; break;
              }
+             // For preview, we still use standard math (might show scientific notation for huge numbers)
              this.prevElPreview.innerText = "= " + this.formatNumber(tempRes.toString());
          }
       } else {
@@ -211,7 +236,6 @@ class Calculator {
 }
 
 // --- HISTORY & THEME ---
-
 const HISTORY_KEY = 'viserCuter_history';
 const THEME_KEY = 'viserCuter_theme';
 const historyPanel = document.getElementById('history-panel')!;
@@ -262,6 +286,7 @@ function renderHistory() {
     renderHistory();
 }
 
+// --- INIT & EVENTS ---
 const body = document.body;
 const themeToggleBtn = document.getElementById('theme-toggle')!;
 const themeIcon = document.getElementById('theme-icon')!;
@@ -298,6 +323,7 @@ const calculator = new Calculator(prevOpEl, currOpEl, prevPreviewEl, soundMgr);
 
 initTheme();
 
+// Event Listeners
 document.querySelectorAll('[data-number]').forEach((btn: any) => {
     btn.addEventListener('click', () => {
         calculator.appendNumber(btn.dataset.number);
@@ -313,8 +339,19 @@ document.querySelectorAll('[data-operator]').forEach((btn: any) => {
 });
 
 document.querySelector('[data-action="calculate"]')?.addEventListener('click', () => {
-    calculator.compute();
-    calculator.updateDisplay();
+    const prevVal = calculator['previousOperand'];
+    const op = calculator['operation'];
+    const currVal = calculator['currentOperand'];
+    
+    if(op && prevVal) {
+        const historyText = `${calculator.formatNumber(prevVal)} ${op} ${calculator.formatNumber(currVal)}`;
+        calculator.compute(); 
+        calculator.updateDisplay();
+        saveHistory(historyText, calculator['currentOperand']);
+    } else {
+        calculator.compute();
+        calculator.updateDisplay();
+    }
 });
 
 document.querySelector('[data-action="clear"]')?.addEventListener('click', () => {
@@ -326,7 +363,7 @@ document.querySelector('[data-action="clear"]')?.addEventListener('click', () =>
 document.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
     soundMgr.playClick('operator');
     calculator.delete();
-    calculator.updateDisplay();
+    calculator.updateDisplay(); // Fixed: Ensure display updates after delete
 });
 
 document.getElementById('history-btn')?.addEventListener('click', () => {
@@ -350,7 +387,10 @@ document.addEventListener('keydown', (e) => {
     else if (['+', '-', '%'].includes(e.key)) calculator.chooseOperation(e.key);
     else if (e.key === '*' || e.key === 'x') calculator.chooseOperation('*');
     else if (e.key === '/' || e.key === '÷') calculator.chooseOperation('÷');
-    else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculator.compute(); }
+    else if (e.key === 'Enter' || e.key === '=') { 
+        e.preventDefault(); 
+        (document.querySelector('[data-action="calculate"]') as HTMLElement).click();
+    }
     else if (e.key === 'Backspace') calculator.delete();
     else if (e.key === 'Escape') calculator.clear();
     calculator.updateDisplay();
