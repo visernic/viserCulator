@@ -1,0 +1,374 @@
+:root {
+  /* Light Theme */
+  --bg-color: #e0e5ec;
+  --calculator-bg: #e0e5ec;
+  --text-color: #444;
+  --text-secondary: #777;
+  --primary-color: #4a90e2;
+  --shadow-light: #ffffff;
+  --shadow-dark: #a3b1c6;
+  --display-bg: #ced6e0;
+  --red-color: #e74c3c;
+  --history-bg: rgba(224, 229, 236, 0.98);
+}
+
+/* Dark Theme */
+body.dark-theme {
+  --bg-color: #212529;
+  --calculator-bg: #2b3035;
+  --text-color: #e9ecef;
+  --text-secondary: #adb5bd;
+  --primary-color: #64b5f6;
+  --shadow-light: #363c42;
+  --shadow-dark: #1a1d20;
+  --display-bg: #212529;
+  --history-bg: rgba(43, 48, 53, 0.98);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  -webkit-tap-highlight-color: transparent; /* Removes blue highlight on mobile tap */
+}
+
+body {
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  transition: background-color 0.3s ease;
+  /* Prevents scrolling on mobile body if content fits */
+  overflow-x: hidden; 
+}
+
+#app {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* --- RESPONSIVE CONTAINER --- */
+.calculator-container {
+  background-color: var(--calculator-bg);
+  width: 100%;
+  /* Mobile First approach */
+  max-width: 420px; 
+  border-radius: 30px;
+  padding: 25px;
+  box-shadow: 20px 20px 60px var(--shadow-dark),
+              -20px -20px 60px var(--shadow-light);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+}
+
+/* Header */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.brand {
+  font-weight: 800;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.version {
+  font-size: 0.7rem;
+  background: var(--primary-color);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 5px;
+  margin-left: 5px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.icon-btn {
+  background: var(--calculator-bg);
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:active {
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+  transform: scale(0.95);
+}
+
+/* Display Screen */
+.display {
+  background-color: var(--display-bg);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 25px;
+  text-align: right;
+  box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.history-expression {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  min-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.main-operand {
+  color: var(--text-color);
+  font-size: 2.5rem;
+  font-weight: 700;
+  /* Robust text wrapping for small screens */
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  line-height: 1.1;
+}
+
+.preview-operand {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+  min-height: 20px;
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+/* Buttons Grid */
+.buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px; /* Standard gap */
+}
+
+.btn {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background-color: var(--calculator-bg);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-color);
+  height: 65px; /* Standard height */
+  border-radius: 18px;
+  box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  transition: all 0.1s ease;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: manipulation; /* Improves tap response on mobile */
+}
+
+.btn:active {
+  box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+  transform: scale(0.96);
+}
+
+.span-two { grid-column: span 2; }
+.span-four { grid-column: span 4; }
+
+.operator-btn { color: var(--primary-color); }
+.action-btn { color: var(--red-color); }
+
+.equals-btn {
+  background-color: var(--primary-color);
+  color: #fff;
+  box-shadow: 6px 6px 12px rgba(74, 144, 226, 0.4);
+}
+.equals-btn:active {
+  background-color: #357abd;
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2);
+}
+
+/* History Panel */
+.history-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--history-bg);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); /* Smooth iOS style easing */
+  display: flex;
+  flex-direction: column;
+  padding: 25px;
+}
+
+.history-panel.active { transform: translateY(0); }
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  color: var(--text-color);
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  font-size: 1.8rem;
+  padding: 5px;
+}
+
+.history-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-right: 5px;
+  padding-bottom: 20px;
+}
+
+.history-list::-webkit-scrollbar { width: 5px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--shadow-dark); border-radius: 5px; }
+
+.history-item {
+  background-color: var(--display-bg);
+  padding: 15px;
+  border-radius: 12px;
+  border-left: 4px solid var(--primary-color);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.history-date { font-size: 0.75rem; color: var(--text-secondary); }
+
+.delete-item-btn {
+  background: none;
+  border: none;
+  color: var(--red-color);
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 5px;
+}
+.delete-item-btn:hover { opacity: 1; }
+
+.history-calc { 
+  font-size: 0.95rem; 
+  color: var(--text-secondary); 
+  margin-bottom: 5px; 
+  text-align: right; 
+  word-break: break-all;
+}
+
+.history-result { 
+  font-size: 1.3rem; 
+  font-weight: bold; 
+  color: var(--text-color); 
+  text-align: right; 
+}
+
+.clear-history-btn {
+  padding: 15px;
+  background-color: var(--red-color);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+  transition: transform 0.1s;
+}
+.clear-history-btn:active { transform: scale(0.98); }
+
+.empty-msg { text-align: center; color: var(--text-secondary); margin-top: 50%; transform: translateY(-50%); }
+
+/* ----------------------------------------------------------- */
+/* --- MEDIA QUERIES FOR FULL RESPONSIVENESS --- */
+/* ----------------------------------------------------------- */
+
+/* Small Mobile Devices (iPhone SE, Galaxy Fold folded, etc.) - Width < 380px */
+@media screen and (max-width: 380px) {
+  #app { padding: 10px; }
+  
+  .calculator-container {
+    padding: 15px;
+    border-radius: 20px;
+  }
+  
+  .buttons-grid { gap: 10px; }
+  
+  .btn {
+    height: 50px; /* Smaller buttons */
+    font-size: 1.1rem;
+    border-radius: 12px;
+  }
+  
+  .main-operand { font-size: 2rem; }
+  .history-header { font-size: 1.1rem; }
+}
+
+/* Medium Mobile Devices (Standard Android/iPhone) - Width 381px to 480px */
+@media screen and (min-width: 381px) and (max-width: 480px) {
+  .btn {
+    height: 60px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Tablets & Small Laptops (iPad, Surface Duo) - Width 481px to 768px */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+  .calculator-container {
+    max-width: 450px; /* Slightly wider on tablets */
+  }
+  .btn { height: 70px; } /* Larger touch targets for tablets */
+}
+
+/* Desktops & Large Screens - Width > 1024px */
+@media screen and (min-width: 1024px) {
+  .btn:hover {
+    /* Hover effects only on devices with a mouse */
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+  }
+  
+  .btn:active {
+    transform: translateY(0);
+  }
+  
+  .icon-btn:hover {
+    transform: rotate(15deg);
+  }
+}
